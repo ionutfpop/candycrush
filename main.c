@@ -397,6 +397,12 @@ int rulareUnJoc(int* mutari_joc) {
     initializareMatrice(board);
 
     while (mutari < MAX_MOVES) {  // Limita de 10.000 de mutari pe joc
+        bool found_match = detectareFormatiuni(board, matches, affected_columns);
+        if (found_match) {
+            scor += eliminaBomboane(board, matches);
+            coboaraBomboane(board, affected_columns);
+            genereazaBomboaneNoi(board, affected_columns);
+        }
         // Cautam mutari valide
         int x1, y1, x2, y2;
         if (!gasesteMutariValide(board, &x1, &y1, &x2, &y2)) {
@@ -406,7 +412,7 @@ int rulareUnJoc(int* mutari_joc) {
             // Verificam din nou daca exista mutari valide dupa amestecare
             if (!gasesteMutariValide(board, &x1, &y1, &x2, &y2)) {
                 printf("\nNu mai exista mutari valide dupa amestecare. Jocul s-a terminat!");
-                break;  // Terminam jocul daca nici dupa amestecare nu exista mutari valide
+                break; // Terminam jocul daca nici dupa amestecare nu exista mutari valide
             }
         }
 
@@ -414,13 +420,6 @@ int rulareUnJoc(int* mutari_joc) {
         interschimbaBomboane(board, x1, y1, x2, y2);
         mutari++;              // Crestem numarul mutarilor pentru jocul curent
         (*mutari_joc) = mutari; // Actualizam numarul mutarilor pentru jocul curent
-
-        bool found_match = detectareFormatiuni(board, matches, affected_columns);
-        if (found_match) {
-            scor += eliminaBomboane(board, matches);
-            coboaraBomboane(board, affected_columns);
-            genereazaBomboaneNoi(board, affected_columns);
-        }
 
         // Oprim jocul daca scorul maxim a fost atins
         if (scor >= MAX_SCORE) {
@@ -431,6 +430,7 @@ int rulareUnJoc(int* mutari_joc) {
     printf("\nNumar mutari joc: %d!\n", *mutari_joc);
     return scor;
 }
+
 
 // Simularea a 100 de jocuri
 void candyCrush(int nr_jocuri) {
@@ -449,6 +449,7 @@ void candyCrush(int nr_jocuri) {
 }
 
 int main() {
+    srand(time(NULL)); // Asigura generarea de numere diferite la fiecare rulare
     candyCrush(100);  // Ruleaza 100 de jocuri
     return 0;
 }
