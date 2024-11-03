@@ -1,12 +1,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <time.h>
+
 #define ROWS 11
 #define COLS 11
 #define MAX_COLORS 4
 #define MAX_MOVES 10000
+#define MAX_SCORE 10000
 
-//Se genereaza matricea initiala 11x11
+// Se genereaza matricea initiala 11x11
 void initializareMatrice(int board[ROWS][COLS]) {
     for (int i = 0; i < ROWS; i++) {
         for (int j = 0; j < COLS; j++) {
@@ -16,8 +19,8 @@ void initializareMatrice(int board[ROWS][COLS]) {
 }
 
 // Functie pentru detectarea liniilor (orizontal si vertical)
-bool detectareLinii(int board[ROWS][COLS], bool matches[ROWS][COLS], int *affected_columns) {
-    bool match_linie3 = false;
+bool detectareFormatiuni(int board[ROWS][COLS], bool matches[ROWS][COLS], int *affected_columns) {
+    bool match_found = false;
 
     // Resetam matricea de "matches"
     for (int i = 0; i < ROWS; i++) {
@@ -26,41 +29,186 @@ bool detectareLinii(int board[ROWS][COLS], bool matches[ROWS][COLS], int *affect
         }
     }
 
-    // Detectam liniile orizontale
+// Detectam formatiuni de tip linie, T si L in toate orientarile
     for (int i = 0; i < ROWS; i++) {
-        for (int j = 0; j < COLS - 2; j++) {
-            if (board[i][j] == board[i][j + 1] && board[i][j] == board[i][j + 2] && board[i][j] != 0) {
-                match_linie3 = true;
-                matches[i][j] = matches[i][j + 1] = matches[i][j + 2] = true;
-                affected_columns[j] = affected_columns[j + 1] = affected_columns[j + 2] = 1;
+        for (int j = 0; j < COLS; j++) {
+            if (board[i][j] != 0) {
+                // Verificam linia de 5 (orizontal)
+                if (j < COLS - 4 && board[i][j] == board[i][j + 1] && board[i][j] == board[i][j + 2] && board[i][j] == board[i][j + 3] && board[i][j] == board[i][j + 4]) {
+                    match_found = true;
+                    matches[i][j] = matches[i][j + 1] = matches[i][j + 2] = matches[i][j + 3] = matches[i][j + 4] = true;
+                    affected_columns[j] = affected_columns[j + 1] = affected_columns[j + 2] = affected_columns[j + 3] = affected_columns[j + 4] = 0;
+                }
+
+                // Verificam linia de 5 (vertical)
+                if (i < ROWS - 4 && board[i][j] == board[i + 1][j] && board[i][j] == board[i + 2][j] && board[i][j] == board[i + 3][j] && board[i][j] == board[i + 4][j]) {
+                    match_found = true;
+                    matches[i][j] = matches[i + 1][j] = matches[i + 2][j] = matches[i + 3][j] = matches[i + 4][j] = true;
+                    affected_columns[j] = 0;
+                }
+
+                // Verificam formatiunea T (orizontal)
+                if (j < COLS - 2 && board[i][j] == board[i][j + 1] && board[i][j] == board[i][j + 2]) {
+                    if (i > 0 && board[i - 1][j + 1] == board[i][j]) { // T cu capul în sus
+                        match_found = true;
+                        matches[i][j] = matches[i][j + 1] = matches[i][j + 2] = matches[i - 1][j + 1] = true;
+                        affected_columns[j] = affected_columns[j + 1] = affected_columns[j + 2] = 0;
+                    }
+                    if (i < ROWS - 1 && board[i + 1][j + 1] == board[i][j]) { // T cu capul în jos
+                        match_found = true;
+                        matches[i][j] = matches[i][j + 1] = matches[i][j + 2] = matches[i + 1][j + 1] = true;
+                        affected_columns[j] = affected_columns[j + 1] = affected_columns[j + 2] = 0;
+                    }
+                }
+
+                // Verificam formatiunea T (vertical)
+                if (i < ROWS - 2 && board[i][j] == board[i + 1][j] && board[i][j] == board[i + 2][j]) {
+                    if (j > 0 && board[i + 1][j - 1] == board[i][j]) { // T cu capul la stanga
+                        match_found = true;
+                        matches[i][j] = matches[i + 1][j] = matches[i + 2][j] = matches[i + 1][j - 1] = true;
+                        affected_columns[j] = 0;
+                    }
+                    if (j < COLS - 1 && board[i + 1][j + 1] == board[i][j]) { // T cu capul la dreapta
+                        match_found = true;
+                        matches[i][j] = matches[i + 1][j] = matches[i + 2][j] = matches[i + 1][j + 1] = true;
+                        affected_columns[j] = 0;
+                    }
+                }
+
+                // Verificam formatiunea L (orizontal)
+                if (j < COLS - 2 && board[i][j] == board[i][j + 1] && board[i][j] == board[i][j + 2]) {
+                    if (i < ROWS - 1 && board[i + 1][j] == board[i][j]) { // L in jos
+                        match_found = true;
+                        matches[i][j] = matches[i][j + 1] = matches[i][j + 2] = matches[i + 1][j] = true;
+                        affected_columns[j] = affected_columns[j + 1] = affected_columns[j + 2] = 0;
+                    }
+                    if (i > 0 && board[i - 1][j] == board[i][j]) { // L in sus
+                        match_found = true;
+                        matches[i][j] = matches[i][j + 1] = matches[i][j + 2] = matches[i - 1][j] = true;
+                        affected_columns[j] = affected_columns[j + 1] = affected_columns[j + 2] = 0;
+                    }
+                }
+
+                // Verificam formatiunea L (vertical)
+                if (i < ROWS - 2 && board[i][j] == board[i + 1][j] && board[i][j] == board[i + 2][j]) {
+                    if (j < COLS - 1 && board[i][j + 1] == board[i][j]) { // L in dreapta
+                        match_found = true;
+                        matches[i][j] = matches[i + 1][j] = matches[i + 2][j] = matches[i][j + 1] = true;
+                        affected_columns[j] = 0;
+                    }
+                    if (j > 0 && board[i][j - 1] == board[i][j]) { // L in stanga
+                        match_found = true;
+                        matches[i][j] = matches[i + 1][j] = matches[i + 2][j] = matches[i][j - 1] = true;
+                        affected_columns[j] = 0;
+                    }
+                }
+
+                // Verificam linia de 4 (orizontal)
+                if (j < COLS - 3 && board[i][j] == board[i][j + 1] && board[i][j] == board[i][j + 2] && board[i][j] == board[i][j + 3]) {
+                    match_found = true;
+                    matches[i][j] = matches[i][j + 1] = matches[i][j + 2] = matches[i][j + 3] = true;
+                    affected_columns[j] = affected_columns[j + 1] = affected_columns[j + 2] = affected_columns[j + 3] = 0;
+                }
+
+                // Verificam linia de 4 (vertical)
+                if (i < ROWS - 3 && board[i][j] == board[i + 1][j] && board[i][j] == board[i + 2][j] && board[i][j] == board[i + 3][j]) {
+                    match_found = true;
+                    matches[i][j] = matches[i + 1][j] = matches[i + 2][j] = matches[i + 3][j] = true;
+                    affected_columns[j] = 0;
+                }
+
+                // Verificam linia de 3 (orizontal)
+                if (j < COLS - 2 && board[i][j] == board[i][j + 1] && board[i][j] == board[i][j + 2]) {
+                    match_found = true;
+                    matches[i][j] = matches[i][j + 1] = matches[i][j + 2] = true;
+                    affected_columns[j] = affected_columns[j + 1] = affected_columns[j + 2] = 0;
+                }
+
+                // Verificam linia de 3 (vertical)
+                if (i < ROWS - 2 && board[i][j] == board[i + 1][j] && board[i][j] == board[i + 2][j]) {
+                    match_found = true;
+                    matches[i][j] = matches[i + 1][j] = matches[i + 2][j] = true;
+                    affected_columns[j] = 0;
+                }
             }
         }
     }
 
-    // Detectam liniile verticale
-    for (int j = 0; j < COLS; j++) {
-        for (int i = 0; i < ROWS - 2; i++) {
-            if (board[i][j] == board[i + 1][j] && board[i][j] == board[i + 2][j] && board[i][j] != 0) {
-                match_linie3 = true;
-                matches[i][j] = matches[i + 1][j] = matches[i + 2][j] = true;
-                affected_columns[i] = affected_columns[i + 1] = affected_columns[i + 2] = 1;
-            }
-        }
-    }
 
-    return match_linie3;
+    return match_found;
 }
+
 
 // Functie pentru eliminarea bomboanelor si calcularea punctajului
 int eliminaBomboane(int board[ROWS][COLS], bool matches[ROWS][COLS]) {
     int scor = 0;
 
+    // Contor pentru a verifica cate bomboane sunt eliminate
+    int temp_matches[ROWS][COLS] = {0};
+
+    // Eliminarea bomboanelor
     for (int i = 0; i < ROWS; i++) {
         for (int j = 0; j < COLS; j++) {
             if (matches[i][j]) {
-                board[i][j] = 0;  // Eliminam linia de 3 bomboane
-                scor += 5;       // Fiecare linie eliminata adauga 5 puncte
+                temp_matches[i][j] = 1;  // Marcam bomboana ca fiind eliminata
+                board[i][j] = 0;  // Eliminam bomboana
             }
+        }
+    }
+
+    // Calculam scorul bazat pe formatiuni
+    for (int i = 0; i < ROWS; i++) {
+        for (int j = 0; j < COLS; j++) {
+            // Verificam liniile de 5 orizontal
+            if (j < COLS - 4 && temp_matches[i][j] && temp_matches[i][j + 1] && temp_matches[i][j + 2] && temp_matches[i][j + 3] && temp_matches[i][j + 4]) {
+                scor += 50;
+            }
+
+            // Verificam liniile de 5 (vertical)
+            if (i < ROWS - 4 && temp_matches[i][j] && temp_matches[i + 1][j] && temp_matches[i + 2][j] && temp_matches[i + 3][j] && temp_matches[i + 4][j]) {
+                scor += 50;
+            }
+
+            // Verificam formatiunile de tip T (orizontal)
+            if (j < COLS - 2 && temp_matches[i][j] && temp_matches[i][j + 1] && temp_matches[i][j + 2] && i > 0 && temp_matches[i - 1][j + 1]) {
+                scor += 30;
+            }
+
+            // Verificam formatiunile de tip T (vertical)
+            if (i < ROWS - 2 && temp_matches[i][j] && temp_matches[i + 1][j] && temp_matches[i + 2][j] && j > 0 && temp_matches[i + 1][j - 1]) {
+                scor += 30;
+            }
+
+            // Verificam formatiunile de tip L (orizontal)
+            if (j < COLS - 2 && temp_matches[i][j] && temp_matches[i][j + 1] && temp_matches[i][j + 2] && i < ROWS - 1 && temp_matches[i + 1][j]) {
+                scor += 20;
+            }
+
+            // Verificam formatiunile de tip L (vertical)
+            if (i < ROWS - 2 && temp_matches[i][j] && temp_matches[i + 1][j] && temp_matches[i + 2][j] && j < COLS - 1 && temp_matches[i][j + 1]) {
+                scor += 20;
+            }
+
+                // Verificam liniile de 4 orizontal
+            else if (j < COLS - 3 && temp_matches[i][j] && temp_matches[i][j + 1] && temp_matches[i][j + 2] && temp_matches[i][j + 3]) {
+                scor += 10;
+            }
+
+                // Verificam liniile de 4 (vertical)
+            else if (i < ROWS - 3 && temp_matches[i][j] && temp_matches[i + 1][j] && temp_matches[i + 2][j] && temp_matches[i + 3][j]) {
+                scor += 10;
+            }
+
+                // Verificam liniile de 3 orizontal
+            else if (j < COLS - 2 && temp_matches[i][j] && temp_matches[i][j + 1] && temp_matches[i][j + 2]) {
+                scor += 5;
+            }
+
+                // Verificam liniile de 3 (vertical)
+            else if (i < ROWS - 2 && temp_matches[i][j] && temp_matches[i + 1][j] && temp_matches[i + 2][j]) {
+                scor += 5;
+            }
+
         }
     }
 
@@ -70,38 +218,176 @@ int eliminaBomboane(int board[ROWS][COLS], bool matches[ROWS][COLS]) {
 // Functie pentru coborarea bomboanelor in coloanele afectate
 void coboaraBomboane(int board[ROWS][COLS], int affected_columns[COLS]) {
     for (int j = 0; j < COLS; j++) {
-        if (affected_columns[j] == 1) {
-            for (int i = ROWS - 1; i >= 0; i--) {
-                if (board[i][j] == 0) {
-                    // Cautam cea mai apropiata bomboana deasupra pentru a o muta
+        if (affected_columns[j] == 0) {  // Verificam doar coloanele afectate
+            for (int i = ROWS - 1; i >= 0; i--) {  // Parcurgem coloana de la baza
+                if (board[i][j] == 0) {  // Daca gasim un loc gol
+                    // Cautam cea mai apropiata bomboana de deasupra pentru a o muta
                     for (int k = i - 1; k >= 0; k--) {
-                        if (board[k][j] != 0) {
-                            board[i][j] = board[k][j];
-                            board[k][j] = 0;
-                            break;
+                        if (board[k][j] != 0) {  // Gasim o bomboana
+                            board[i][j] = board[k][j];  // Mutam bomboana in locul gol
+                            board[k][j] = 0;  // Golim locul de unde a fost mutata
+                            break;  // Iesim din bucla de cautare
                         }
                     }
                 }
             }
         }
     }
-}
 
-// Functie pentru generarea de bomboane noi în spatiile libere
-void genereazaBomboaneNoi(int board[ROWS][COLS], int affected_columns[COLS]) {
+    // Dupa mutarea bomboanelor, este posibil sa avem goluri in coloanele afectate
+    // trebuie sa ne asiguram ca toate coloanele afectate se umplu corect
     for (int j = 0; j < COLS; j++) {
-        if (affected_columns[j] == 1) {
-            for (int i = 0; i < ROWS; i++) {
-                if (board[i][j] == 0) {
-                    board[i][j] = rand() % MAX_COLORS + 1;  //Generam bomboane noi
+        if (affected_columns[j] == 0) {  // Verificam din nou coloanele afectate
+            int empty_row = ROWS - 1;  // Cautam de la baza coloanei
+            for (int i = ROWS - 1; i >= 0; i--) {
+                if (board[i][j] != 0) {  // Daca gasim o bomboana
+                    if (i != empty_row) {  // Daca nu este deja la locul corect
+                        board[empty_row][j] = board[i][j];  // Mutam bomboana in jos
+                        board[i][j] = 0;  // Golim locul de unde am mutat bomboana
+                    }
+                    empty_row--;  // Scadem indexul pentru urmatoarea mutare
                 }
             }
         }
     }
 }
 
-//rularea unui singur joc
-int rulareUnJoc() {
+
+// Functie pentru generarea de bomboane noi in spatiile libere
+void genereazaBomboaneNoi(int board[ROWS][COLS], int affected_columns[COLS]) {
+    // Daca o coloana a fost afectata, cautam de jos in sus pentru a umple golurile
+    for (int j = 0; j < COLS; j++) {
+        // Verificam daca coloana a fost afectata
+        if (affected_columns[j] == 0) {
+            // Cautam de jos in sus pentru a umple spatiile libere
+            for (int i = ROWS - 1; i >= 0; i--) {
+                if (board[i][j] == 0) {  // Daca gasim un spatiu liber
+                    // Generam o bomboana noua
+                    board[i][j] = rand() % MAX_COLORS + 1;
+                }
+            }
+        }
+    }
+}
+
+
+// Functie pentru a verifica daca interschimbarea genereaza o formatiune valida
+bool interschimbaBomboane(int board[ROWS][COLS], int x1, int y1, int x2, int y2) {
+    // Interschimbam bomboanele
+    int temp = board[x1][y1];
+    board[x1][y1] = board[x2][y2];
+    board[x2][y2] = temp;
+
+    // Verificam daca schimbarea creeaza o formatiune valida
+    bool matches[ROWS][COLS];  // Declaram matricea matches
+    int affected_columns[COLS] = {0};
+
+    bool is_valid = detectareFormatiuni(board, matches, affected_columns);
+
+    // Revenim la starea initiala
+    temp = board[x1][y1];
+    board[x1][y1] = board[x2][y2];
+    board[x2][y2] = temp;
+
+    return is_valid;  // Returnam daca schimbarea este valida
+}
+
+// Functie pentru a gasi mutari valide si cele mai profitabile
+bool gasesteMutariValide(int board[ROWS][COLS], int *x1, int *y1, int *x2, int *y2) {
+    int best_score = 0;
+    bool found_move = false;
+    bool matches[ROWS][COLS];  // Declara matricea matches
+
+    for (int i = 0; i < ROWS; i++) {
+        for (int j = 0; j < COLS; j++) {
+            // Verifica mutarea orizontala spre dreapta
+            if (j < COLS - 1) {
+                if (interschimbaBomboane(board, i, j, i, j + 1)) {
+                    int temp_score = eliminaBomboane(board, matches);
+                    if (temp_score > best_score && temp_score <= 10000) {
+                        best_score = temp_score;
+                        *x1 = i;
+                        *y1 = j;
+                        *x2 = i;
+                        *y2 = j + 1;
+                        found_move = true;
+                    }
+                }
+                // Verifica mutarea orizontala spre stanga
+                if (j > 0) {
+                    if (interschimbaBomboane(board, i, j, i, j - 1)) {
+                        int temp_score = eliminaBomboane(board, matches);
+                        if (temp_score > best_score && temp_score <= 10000) {
+                            best_score = temp_score;
+                            *x1 = i;
+                            *y1 = j;
+                            *x2 = i;
+                            *y2 = j - 1;
+                            found_move = true;
+                        }
+                    }
+                }
+            }
+            // Verifica mutarea verticala in jos
+            if (i < ROWS - 1) {
+                if (interschimbaBomboane(board, i, j, i + 1, j)) {
+                    int temp_score = eliminaBomboane(board, matches);
+                    if (temp_score > best_score && temp_score <= 10000) {
+                        best_score = temp_score;
+                        *x1 = i;
+                        *y1 = j;
+                        *x2 = i + 1;
+                        *y2 = j;
+                        found_move = true;
+                    }
+                }
+            }
+            // Verifica mutarea verticala in sus
+            if (i > 0) {
+                if (interschimbaBomboane(board, i, j, i - 1, j)) {
+                    int temp_score = eliminaBomboane(board, matches);
+                    if (temp_score > best_score && temp_score <= 10000) {
+                        best_score = temp_score;
+                        *x1 = i;
+                        *y1 = j;
+                        *x2 = i - 1;
+                        *y2 = j;
+                        found_move = true;
+                    }
+                }
+            }
+        }
+    }
+
+    return found_move;  // Returneaza daca s-au gasit mutari
+}
+
+void amestecaMatrice(int board[ROWS][COLS]) {
+    // Schimba liniile intre ele
+    for (int i = 0; i < ROWS; i++) {
+        int randRow = rand() % ROWS; // Alege o linie aleatoare
+        for (int j = 0; j < COLS; j++) {
+            // Schimba linia i cu linia randRow
+            int temp = board[i][j];
+            board[i][j] = board[randRow][j];
+            board[randRow][j] = temp;
+        }
+    }
+
+    // Schimba coloanele intre ele
+    for (int j = 0; j < COLS; j++) {
+        int randCol = rand() % COLS; // Alege o coloana aleatoare
+        for (int i = 0; i < ROWS; i++) {
+            // Schimba coloana j cu coloana randCol
+            int temp = board[i][j];
+            board[i][j] = board[i][randCol];
+            board[i][randCol] = temp;
+        }
+    }
+}
+
+// Rularea unui singur joc
+int rulareUnJoc(int* mutari_joc) {
     int board[ROWS][COLS];
     bool matches[ROWS][COLS];
     int affected_columns[COLS] = {0};
@@ -110,39 +396,59 @@ int rulareUnJoc() {
 
     initializareMatrice(board);
 
-    while (mutari < MAX_MOVES) {
-        // detectare si eliminare linii
-        bool found_match = detectareLinii(board, matches, affected_columns);
+    while (mutari < MAX_MOVES) {  // Limita de 10.000 de mutari pe joc
+        // Cautam mutari valide
+        int x1, y1, x2, y2;
+        if (!gasesteMutariValide(board, &x1, &y1, &x2, &y2)) {
+            // Amestecam tabla daca nu exista mutari valide
+            amestecaMatrice(board);
+
+            // Verificam din nou daca exista mutari valide dupa amestecare
+            if (!gasesteMutariValide(board, &x1, &y1, &x2, &y2)) {
+                printf("\nNu mai exista mutari valide dupa amestecare. Jocul s-a terminat!");
+                break;  // Terminam jocul daca nici dupa amestecare nu exista mutari valide
+            }
+        }
+
+        // Executam interschimbarea
+        interschimbaBomboane(board, x1, y1, x2, y2);
+        mutari++;              // Crestem numarul mutarilor pentru jocul curent
+        (*mutari_joc) = mutari; // Actualizam numarul mutarilor pentru jocul curent
+
+        bool found_match = detectareFormatiuni(board, matches, affected_columns);
         if (found_match) {
             scor += eliminaBomboane(board, matches);
             coboaraBomboane(board, affected_columns);
             genereazaBomboaneNoi(board, affected_columns);
-            for (int i = 0; i < COLS; i++)
-                affected_columns[i] = 0;  // Resetare coloanele afectate
-        } else {
-            // Daca nu mai exista mutari jocul se termina
+        }
+
+        // Oprim jocul daca scorul maxim a fost atins
+        if (scor >= MAX_SCORE) {
+            printf("\nMaxim de puncte atins: %d!", scor);
             break;
         }
-        mutari++;
     }
-
+    printf("\nNumar mutari joc: %d!\n", *mutari_joc);
     return scor;
 }
 
-//simularea a 1000 de jocuri
+// Simularea a 100 de jocuri
 void candyCrush(int nr_jocuri) {
     int total_scor = 0;
+    int total_mutari = 0;
+    int mutari_joc;
 
     for (int i = 0; i < nr_jocuri; i++) {
-        int scor = rulareUnJoc();
+        int scor = rulareUnJoc(&mutari_joc);
         total_scor += scor;
+        total_mutari += mutari_joc;
         printf("Jocul %d: Scor: %d\n", i + 1, scor);
     }
-
     printf("\nScorul mediu dupa %d de jocuri: %.2f\n", nr_jocuri, total_scor / (double)nr_jocuri);
+    printf("Nr mediu mutari dupa %d de jocuri: %.2f\n", nr_jocuri, total_mutari / (double)nr_jocuri);
 }
 
 int main() {
-    candyCrush(1000);  // ruleaza 1000 de jocuri
+    candyCrush(100);  // Ruleaza 100 de jocuri
     return 0;
 }
