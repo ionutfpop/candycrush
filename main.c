@@ -304,7 +304,7 @@ bool gasesteMutariValide(int board[ROWS][COLS], int *x1, int *y1, int *x2, int *
             if (j < COLS - 1) {
                 if (interschimbaBomboane(board, i, j, i, j + 1)) {
                     int temp_score = eliminaBomboane(board, matches);
-                    if (temp_score > best_score && temp_score <= 10000) {
+                    if (temp_score > best_score && temp_score <= MAX_SCORE) {
                         best_score = temp_score;
                         *x1 = i;
                         *y1 = j;
@@ -317,7 +317,7 @@ bool gasesteMutariValide(int board[ROWS][COLS], int *x1, int *y1, int *x2, int *
                 if (j > 0) {
                     if (interschimbaBomboane(board, i, j, i, j - 1)) {
                         int temp_score = eliminaBomboane(board, matches);
-                        if (temp_score > best_score && temp_score <= 10000) {
+                        if (temp_score > best_score && temp_score <= MAX_SCORE) {
                             best_score = temp_score;
                             *x1 = i;
                             *y1 = j;
@@ -332,7 +332,7 @@ bool gasesteMutariValide(int board[ROWS][COLS], int *x1, int *y1, int *x2, int *
             if (i < ROWS - 1) {
                 if (interschimbaBomboane(board, i, j, i + 1, j)) {
                     int temp_score = eliminaBomboane(board, matches);
-                    if (temp_score > best_score && temp_score <= 10000) {
+                    if (temp_score > best_score && temp_score <= MAX_SCORE) {
                         best_score = temp_score;
                         *x1 = i;
                         *y1 = j;
@@ -346,7 +346,7 @@ bool gasesteMutariValide(int board[ROWS][COLS], int *x1, int *y1, int *x2, int *
             if (i > 0) {
                 if (interschimbaBomboane(board, i, j, i - 1, j)) {
                     int temp_score = eliminaBomboane(board, matches);
-                    if (temp_score > best_score && temp_score <= 10000) {
+                    if (temp_score > best_score && temp_score <= MAX_SCORE) {
                         best_score = temp_score;
                         *x1 = i;
                         *y1 = j;
@@ -371,7 +371,7 @@ int rulareUnJoc(int *mutari_joc) {
     int x1, y1, x2, y2;
 
     // Detectam si eliminam formatiunile inițiale
-    while (scor < 10000 && *mutari_joc < MAX_MOVES) {
+    while (scor < MAX_SCORE && *mutari_joc < MAX_MOVES) {
         bool matches[ROWS][COLS];
         int affected_columns[COLS] = {0};
 
@@ -382,7 +382,7 @@ int rulareUnJoc(int *mutari_joc) {
             genereazaBomboaneNoi(board, affected_columns);
 
             // Opreste jocul daca s-a atins scorul de 10000
-            if (scor >= 10000) {
+            if (scor >= MAX_SCORE) {
                 *mutari_joc = mutari;
                 printf("\nNumar mutari joc: %d!\n", *mutari_joc);
                 return scor;
@@ -406,7 +406,7 @@ int rulareUnJoc(int *mutari_joc) {
                     (*mutari_joc) = mutari;
 
                     // Opreste jocul daca s-a atins scorul de 10000
-                    if (scor >= 10000) {
+                    if (scor >= MAX_SCORE) {
                         printf("\nNumar mutari joc: %d!\n", *mutari_joc);
                         return scor;
                     }
