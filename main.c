@@ -362,71 +362,68 @@ bool gasesteMutariValide(int board[ROWS][COLS], int *x1, int *y1, int *x2, int *
     return found_move;  // Returneaza daca s-au gasit mutari
 }
 
-void amestecaMatrice(int board[ROWS][COLS]) {
-    // Schimba liniile intre ele
-    for (int i = 0; i < ROWS; i++) {
-        int randRow = rand() % ROWS; // Alege o linie aleatoare
-        for (int j = 0; j < COLS; j++) {
-            // Schimba linia i cu linia randRow
-            int temp = board[i][j];
-            board[i][j] = board[randRow][j];
-            board[randRow][j] = temp;
-        }
-    }
-
-    // Schimba coloanele intre ele
-    for (int j = 0; j < COLS; j++) {
-        int randCol = rand() % COLS; // Alege o coloana aleatoare
-        for (int i = 0; i < ROWS; i++) {
-            // Schimba coloana j cu coloana randCol
-            int temp = board[i][j];
-            board[i][j] = board[i][randCol];
-            board[i][randCol] = temp;
-        }
-    }
-}
-
 // Rularea unui singur joc
-int rulareUnJoc(int* mutari_joc) {
+int rulareUnJoc(int *mutari_joc) {
     int board[ROWS][COLS];
-    bool matches[ROWS][COLS];
-    int affected_columns[COLS] = {0};
-    int scor = 0;
-    int mutari = 0;
-
     initializareMatrice(board);
+    int mutari = 0;
+    int scor = 0;
+    int x1, y1, x2, y2;
 
-    while (mutari < MAX_MOVES) {  // Limita de 10.000 de mutari pe joc
-        bool found_match = detectareFormatiuni(board, matches, affected_columns);
-        if (found_match) {
+    // Detectam si eliminam formatiunile inițiale
+    while (scor < 10000 && *mutari_joc < MAX_MOVES) {
+        bool matches[ROWS][COLS];
+        int affected_columns[COLS] = {0};
+
+        // Detectare si eliminare formatiuni valide
+        while (detectareFormatiuni(board, matches, affected_columns)) {
             scor += eliminaBomboane(board, matches);
             coboaraBomboane(board, affected_columns);
             genereazaBomboaneNoi(board, affected_columns);
-        }
-        // Cautam mutari valide
-        int x1, y1, x2, y2;
-        if (!gasesteMutariValide(board, &x1, &y1, &x2, &y2)) {
-            // Amestecam tabla daca nu exista mutari valide
-            amestecaMatrice(board);
 
-            // Verificam din nou daca exista mutari valide dupa amestecare
-            if (!gasesteMutariValide(board, &x1, &y1, &x2, &y2)) {
-                printf("\nNu mai exista mutari valide dupa amestecare. Jocul s-a terminat!");
-                break; // Terminam jocul daca nici dupa amestecare nu exista mutari valide
+            // Opreste jocul daca s-a atins scorul de 10000
+            if (scor >= 10000) {
+                *mutari_joc = mutari;
+                printf("\nNumar mutari joc: %d!\n", *mutari_joc);
+                return scor;
             }
         }
 
-        // Executam interschimbarea
-        interschimbaBomboane(board, x1, y1, x2, y2);
-        mutari++;              // Crestem numarul mutarilor pentru jocul curent
-        (*mutari_joc) = mutari; // Actualizam numarul mutarilor pentru jocul curent
+        // Cautare mutari valide daca nu mai exista formatiuni
+        if (gasesteMutariValide(board, &x1, &y1, &x2, &y2)) {
+            // Executa interschimbarea
+            int temp = board[x1][y1];
+            board[x1][y1] = board[x2][y2];
+            board[x2][y2] = temp;
 
-        // Oprim jocul daca scorul maxim a fost atins
-        if (scor >= MAX_SCORE) {
-            printf("\nMaxim de puncte atins: %d!", scor);
+            // Verificam daca interschimbarea a generat o formatiune valida
+            if (detectareFormatiuni(board, matches, affected_columns)) {
+                do {
+                    scor += eliminaBomboane(board, matches);
+                    coboaraBomboane(board, affected_columns);
+                    genereazaBomboaneNoi(board, affected_columns);
+                    mutari++;
+                    (*mutari_joc) = mutari;
+
+                    // Opreste jocul daca s-a atins scorul de 10000
+                    if (scor >= 10000) {
+                        printf("\nNumar mutari joc: %d!\n", *mutari_joc);
+                        return scor;
+                    }
+                } while (detectareFormatiuni(board, matches, affected_columns));
+            } else {
+                // Revenim la starea initiala daca nu s-a realizat o formatiune valida
+                temp = board[x1][y1];
+                board[x1][y1] = board[x2][y2];
+                board[x2][y2] = temp;
+            }
+        } else {
+            // Iesim din bucla daca nu mai exista mutari valide
             break;
         }
     }
+
+    // Afiseaza numarul total de mutari la finalul jocului
     printf("\nNumar mutari joc: %d!\n", *mutari_joc);
     return scor;
 }
