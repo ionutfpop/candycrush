@@ -218,34 +218,16 @@ int eliminaBomboane(int board[ROWS][COLS], bool matches[ROWS][COLS]) {
 // Functie pentru coborarea bomboanelor in coloanele afectate
 void coboaraBomboane(int board[ROWS][COLS], int affected_columns[COLS]) {
     for (int j = 0; j < COLS; j++) {
-        if (affected_columns[j] == 0) {  // Verificam doar coloanele afectate
-            for (int i = ROWS - 1; i >= 0; i--) {  // Parcurgem coloana de la baza
-                if (board[i][j] == 0) {  // Daca gasim un loc gol
-                    // Cautam cea mai apropiata bomboana de deasupra pentru a o muta
+        if (affected_columns[j] == 0) {
+            for (int i = ROWS - 1; i >= 0; i--) {
+                if (board[i][j] == 0) {
                     for (int k = i - 1; k >= 0; k--) {
-                        if (board[k][j] != 0) {  // Gasim o bomboana
-                            board[i][j] = board[k][j];  // Mutam bomboana in locul gol
-                            board[k][j] = 0;  // Golim locul de unde a fost mutata
-                            break;  // Iesim din bucla de cautare
+                        if (board[k][j] != 0) {
+                            board[i][j] = board[k][j];
+                            board[k][j] = 0;
+                            break;
                         }
                     }
-                }
-            }
-        }
-    }
-
-    // Dupa mutarea bomboanelor, este posibil sa avem goluri in coloanele afectate
-    // trebuie sa ne asiguram ca toate coloanele afectate se umplu corect
-    for (int j = 0; j < COLS; j++) {
-        if (affected_columns[j] == 0) {  // Verificam din nou coloanele afectate
-            int empty_row = ROWS - 1;  // Cautam de la baza coloanei
-            for (int i = ROWS - 1; i >= 0; i--) {
-                if (board[i][j] != 0) {  // Daca gasim o bomboana
-                    if (i != empty_row) {  // Daca nu este deja la locul corect
-                        board[empty_row][j] = board[i][j];  // Mutam bomboana in jos
-                        board[i][j] = 0;  // Golim locul de unde am mutat bomboana
-                    }
-                    empty_row--;  // Scadem indexul pentru urmatoarea mutare
                 }
             }
         }
@@ -389,7 +371,7 @@ int rulareUnJoc(int *mutari_joc) {
             }
         }
 
-        // Cautare mutari valide daca nu mai exista formatiuni
+        // Cautare mutari valide daca nu mai exista formatiuni formate automat
         if (gasesteMutariValide(board, &x1, &y1, &x2, &y2)) {
             // Executa interschimbarea
             int temp = board[x1][y1];
